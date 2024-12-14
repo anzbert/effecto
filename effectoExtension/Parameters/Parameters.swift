@@ -16,7 +16,7 @@ let effectoExtensionParameterSpecs = ParameterTreeSpec {
             name: "Output Gain",
             units: .linearGain,
             valueRange: 0.0...1.0,
-            defaultValue: 0.25
+            defaultValue: 0.5
         )
     }
 }

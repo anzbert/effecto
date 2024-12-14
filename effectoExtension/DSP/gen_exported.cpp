@@ -77,7 +77,7 @@ typedef struct State {
 		__exception = 0;
 		vectorsize = __vs;
 		samplerate = __sr;
-		m_gain_1 = 0.25;
+		m_gain_1 = 0.5;
 		genlib_reset_complete(this);
 		
 	};

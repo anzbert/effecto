@@ -49,6 +49,8 @@ class effectoExtensionDSPKernel {
         for (int i = 0; i < outputChannelCount; ++i) {
             outputGenBuffers.push_back(new t_sample[mMaxFramesToRender]);
         }
+
+        gen_exported::setparameter(gState, 0, mGain, nullptr);
     }
 
     void deInitialize() {
@@ -64,13 +66,11 @@ class effectoExtensionDSPKernel {
                 delete[] inputGenBuffers[i];
             }
             inputGenBuffers.clear();
-           
 
             for (int i = 0; i < outputGenBuffers.size(); ++i) {
                 delete[] outputGenBuffers[i];
             }
             outputGenBuffers.clear();
-           
         }
     }
 
@@ -87,10 +87,6 @@ class effectoExtensionDSPKernel {
             if (gState) {
                 //                cout << "newValue: " << value << endl;
                 gen_exported::setparameter(gState, 0, mGain, nullptr);
-
-                //                t_param v;
-                //                gen_exported::getparameter(gState, 0, &v);
-                //                cout << "set to " << v << endl;
             }
             break;
             // Add a case for each parameter in
@@ -103,7 +99,7 @@ class effectoExtensionDSPKernel {
 
         switch (address) {
         case effectoExtensionParameterAddress::gain:
-            return (AUValue)mGain;
+            return mGain;
 
         default:
             return 0.f;
@@ -174,21 +170,6 @@ class effectoExtensionDSPKernel {
          }
          */
 
-        // Perform per sample dsp on the incoming float in before assigning
-        // it to out
-        //        for (UInt32 channel = 0; channel < inputBuffers.size();
-        //        ++channel) {
-        //            for (UInt32 frameIndex = 0; frameIndex < frameCount;
-        //            ++frameIndex) {
-        //
-        //                // Do your sample by sample dsp here:
-        //
-        //                // GAIN
-        //                outputBuffers[channel][frameIndex] =
-        //                    inputBuffers[channel][frameIndex] * mGain;
-        //            }
-        //        }
-
         // GEN~ code
 
         //        convert input channels into a Gen -ready format
@@ -196,8 +177,7 @@ class effectoExtensionDSPKernel {
             FloatToSample(inputGenBuffers[i], inputBuffers[i], frameCount);
         }
 
-        //                silence any open Gen inputs-- what does this do
-        //                    ? ?
+        //                silence any open Gen inputs-- why
         //                for (int i = ; i < inputGenBuffers.size(); ++i) {
         //                            zeroBuffer(inputGenBuffers[i],
         //                            frameCount);
@@ -208,12 +188,6 @@ class effectoExtensionDSPKernel {
             gen_exported::perform((CommonState *)gState, &inputGenBuffers[0],
                                   inputGenBuffers.size(), &outputGenBuffers[0],
                                   outputGenBuffers.size(), frameCount);
-
-            //            gen_exported::perform(
-            //                (CommonState *)gState, (double
-            //                **)&inputBuffers[0], (int)inputBuffers.size(),
-            //                (double **)&outputBuffers[0],
-            //                (int)outputBuffers.size(), (int)frameCount);
         }
 
         for (int i = 0; i < outputBuffers.size(); ++i) {
@@ -261,7 +235,7 @@ class effectoExtensionDSPKernel {
     AUHostMusicalContextBlock mMusicalContextBlock;
 
     double mSampleRate = 44100.0;
-    double mGain = 0.25;
+    double mGain = 0.5;
     bool mBypassed = false;
     AUAudioFrameCount mMaxFramesToRender = 1024;
 
