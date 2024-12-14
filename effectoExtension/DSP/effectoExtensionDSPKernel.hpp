@@ -24,24 +24,27 @@ using namespace std;
  As a non-ObjC class, this is safe to use from render thread.
  */
 class effectoExtensionDSPKernel {
+    bool debugMessages = false; // for debug logs
+
+    namespace gen_exported = gen;
 
   public:
     void initialize(int inputChannelCount, int outputChannelCount,
                     double inSampleRate) {
-
         mSampleRate = inSampleRate;
 
-        cout << "-- fn initialize..." << endl;
-        cout << "Samplerate: " << inSampleRate << endl;
-        cout << "outChannels: " << outputChannelCount << endl;
-        cout << "inChannels: " << inputChannelCount << "\n" << endl;
+        gState = (CommonState *)gen::create(mSampleRate, mMaxFramesToRender);
 
-        gState = (CommonState *)gen_exported::create(mSampleRate,
-                                                     mMaxFramesToRender);
+        if (debugMessages) {
+            cout << "-- fn initialize..." << endl;
+            cout << "Samplerate: " << inSampleRate << endl;
+            cout << "outChannels: " << outputChannelCount << endl;
+            cout << "inChannels: " << inputChannelCount << "\n" << endl;
 
-        cout << "gState ins: " << gen_exported::num_inputs() << endl;
-        cout << "gState outs: " << gen_exported::num_outputs() << endl;
-        cout << "num_params: " << gen_exported::num_params() << "\n" << endl;
+            cout << "gState ins: " << gen::num_inputs() << endl;
+            cout << "gState outs: " << gen::num_outputs() << endl;
+            cout << "num_params: " << gen::num_params() << "\n" << endl;
+        }
 
         for (int i = 0; i < inputChannelCount; ++i) {
             inputGenBuffers.push_back(new t_sample[mMaxFramesToRender]);
@@ -50,16 +53,17 @@ class effectoExtensionDSPKernel {
             outputGenBuffers.push_back(new t_sample[mMaxFramesToRender]);
         }
 
-        gen_exported::setparameter(gState, 0, mGain, nullptr);
+        gen::setparameter(gState, 0, mGain, nullptr);
     }
 
     void deInitialize() {
-
-        cout << "-- fn deInitialize...\n" << endl;
-        runOnce = false;
+        if (debugMessages) {
+            cout << "-- fn deInitialize...\n" << endl;
+            displayProcessMessageOnce = false;
+        }
 
         if (gState) {
-            gen_exported::destroy((CommonState *)gState);
+            gen::destroy((CommonState *)gState);
             gState = NULL;
 
             for (int i = 0; i < inputGenBuffers.size(); ++i) {
@@ -86,7 +90,7 @@ class effectoExtensionDSPKernel {
             mGain = value;
             if (gState) {
                 //                cout << "newValue: " << value << endl;
-                gen_exported::setparameter(gState, 0, mGain, nullptr);
+                gen::setparameter(gState, 0, mGain, nullptr);
             }
             break;
             // Add a case for each parameter in
@@ -131,13 +135,13 @@ class effectoExtensionDSPKernel {
                  AUEventSampleTime bufferStartTime,
                  AUAudioFrameCount frameCount) {
 
-        if (!runOnce) {
+        if (!displayProcessMessageOnce && debugMessages) {
             cout << "-- fn process..." << endl;
             cout << "inputBuffers: " << inputBuffers.size() << endl;
             cout << "outputBuffers: " << outputBuffers.size() << endl;
             cout << "bufferStartTime: " << bufferStartTime << endl;
             cout << "frameCount: " << frameCount << "\n" << endl;
-            runOnce = true;
+            displayProcessMessageOnce = true;
         }
 
         /*
@@ -185,9 +189,9 @@ class effectoExtensionDSPKernel {
 
         // apply the Gen filter
         if (gState) {
-            gen_exported::perform((CommonState *)gState, &inputGenBuffers[0],
-                                  inputGenBuffers.size(), &outputGenBuffers[0],
-                                  outputGenBuffers.size(), frameCount);
+            gen::perform((CommonState *)gState, &inputGenBuffers[0],
+                         inputGenBuffers.size(), &outputGenBuffers[0],
+                         outputGenBuffers.size(), frameCount);
         }
 
         for (int i = 0; i < outputBuffers.size(); ++i) {
@@ -242,8 +246,7 @@ class effectoExtensionDSPKernel {
     // gen stuff:
     CommonState *gState = NULL;
 
-    // for debug logs only:
-    bool runOnce = false;
+    bool displayProcessMessageOnce = false;
 
     std::vector<t_sample *> inputGenBuffers;
     std::vector<t_sample *> outputGenBuffers;
