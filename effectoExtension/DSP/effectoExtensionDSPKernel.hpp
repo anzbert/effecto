@@ -26,14 +26,12 @@ using namespace std;
 class effectoExtensionDSPKernel {
     bool debugMessages = false; // for debug logs
 
-    namespace gen_exported = gen;
-
   public:
     void initialize(int inputChannelCount, int outputChannelCount,
                     double inSampleRate) {
         mSampleRate = inSampleRate;
 
-        gState = (CommonState *)gen::create(mSampleRate, mMaxFramesToRender);
+        gState = (CommonState *)gen_exported::create(mSampleRate, mMaxFramesToRender);
 
         if (debugMessages) {
             cout << "-- fn initialize..." << endl;
@@ -41,9 +39,9 @@ class effectoExtensionDSPKernel {
             cout << "outChannels: " << outputChannelCount << endl;
             cout << "inChannels: " << inputChannelCount << "\n" << endl;
 
-            cout << "gState ins: " << gen::num_inputs() << endl;
-            cout << "gState outs: " << gen::num_outputs() << endl;
-            cout << "num_params: " << gen::num_params() << "\n" << endl;
+            cout << "gState ins: " << gen_exported::num_inputs() << endl;
+            cout << "gState outs: " << gen_exported::num_outputs() << endl;
+            cout << "num_params: " << gen_exported::num_params() << "\n" << endl;
         }
 
         for (int i = 0; i < inputChannelCount; ++i) {
@@ -53,7 +51,7 @@ class effectoExtensionDSPKernel {
             outputGenBuffers.push_back(new t_sample[mMaxFramesToRender]);
         }
 
-        gen::setparameter(gState, 0, mGain, nullptr);
+        gen_exported::setparameter(gState, 0, mGain, nullptr);
     }
 
     void deInitialize() {
@@ -63,7 +61,7 @@ class effectoExtensionDSPKernel {
         }
 
         if (gState) {
-            gen::destroy((CommonState *)gState);
+            gen_exported::destroy((CommonState *)gState);
             gState = NULL;
 
             for (int i = 0; i < inputGenBuffers.size(); ++i) {
@@ -90,7 +88,7 @@ class effectoExtensionDSPKernel {
             mGain = value;
             if (gState) {
                 //                cout << "newValue: " << value << endl;
-                gen::setparameter(gState, 0, mGain, nullptr);
+                gen_exported::setparameter(gState, 0, mGain, nullptr);
             }
             break;
             // Add a case for each parameter in
@@ -189,7 +187,7 @@ class effectoExtensionDSPKernel {
 
         // apply the Gen filter
         if (gState) {
-            gen::perform((CommonState *)gState, &inputGenBuffers[0],
+            gen_exported::perform((CommonState *)gState, &inputGenBuffers[0],
                          inputGenBuffers.size(), &outputGenBuffers[0],
                          outputGenBuffers.size(), frameCount);
         }
